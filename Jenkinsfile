@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'MYSQL'  // Make sure this agent has Terraform, Terrascan, and TFLint installed
+        label 'MYSQL'  // Ensure Terraform, TFLint, and Terrascan are installed here
     }
 
     environment {
@@ -16,7 +16,10 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                withCredentials([aws(credentialsId: 'aws_creds', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws_creds'
+                ]]) {
                     sh '''
                         echo "Initializing Terraform..."
                         terraform init -input=false
@@ -27,7 +30,10 @@ pipeline {
 
         stage('Terraform Validate') {
             steps {
-                withCredentials([aws(credentialsId: 'aws_creds', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws_creds'
+                ]]) {
                     sh 'terraform validate'
                 }
             }
@@ -35,13 +41,13 @@ pipeline {
 
         stage('Terraform Format Check') {
             steps {
-                sh 'terraform fmt -check -diff || true'  // don't fail for formatting
+                sh 'terraform fmt -check -diff || true'
             }
         }
 
         stage('Terrascan Security Scan') {
             steps {
-                sh 'terrascan scan -t aws || true'  // don't fail pipeline if warnings
+                sh 'terrascan scan -t aws || true'
             }
         }
 
@@ -56,7 +62,10 @@ pipeline {
 
         stage('Terraform Plan') {
             steps {
-                withCredentials([aws(credentialsId: 'aws_creds', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws_creds'
+                ]]) {
                     sh '''
                         echo "Running Terraform Plan..."
                         terraform plan -out=tfplan
@@ -70,7 +79,10 @@ pipeline {
                 branch 'main'
             }
             steps {
-                withCredentials([aws(credentialsId: 'aws_creds', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws_creds'
+                ]]) {
                     input message: 'Approve to apply Terraform changes?'
                     sh 'terraform apply -auto-approve tfplan'
                 }
