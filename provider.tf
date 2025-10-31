@@ -6,12 +6,6 @@ terraform {
     }
   }
 
-backend "s3" {
-    bucket = "bhanu-2000-usa"
-    key = "jp/infraterrfaorm"
-    region = "ap-south-1"
-}
-
 }
 provider "aws" {
     region = "ap-south-1"
